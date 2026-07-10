@@ -1,6 +1,16 @@
 # customer-churn-prediction-mlops
 
-An end-to-end machine learning project predicting customer churn on the Telco dataset. It uses **[Optuna](https://optuna.org/)** to perform hyperparameter tuning and **[MLflow](https://mlflow.org/)** to track experiments (parameters, metrics, and the serialized model). See [Hyperparameter tuning (Optuna)](#hyperparameter-tuning-optuna) and [Experiment tracking (MLflow)](#experiment-tracking-mlflow) below for details.
+[App](https://churn-ui-355591061580.us-east4.run.app/ui/)
+
+An end-to-end machine learning project predicting customer churn on the Telco dataset. 
+
+It uses **[Optuna](https://optuna.org/)** to perform hyperparameter tuning, 
+**[MLflow](https://mlflow.org/)** to track experiments (parameters, metrics, and the serialized model),
+FastAPI for serving the machine learning model as an API,
+Gradio for building the interactive user interface,
+GCP for cloud deployment and hosting.
+
+See [Hyperparameter tuning (Optuna)](#hyperparameter-tuning-optuna) and [Experiment tracking (MLflow)](#experiment-tracking-mlflow) below for details.
 
 A `requirements.txt` file has been added with pinned project dependencies.
 
