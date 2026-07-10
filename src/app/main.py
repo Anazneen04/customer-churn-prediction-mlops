@@ -164,7 +164,7 @@ def process_prediction(
 
 # Define the custom theme for professional look
 custom_theme = gr.themes.Soft(
-    primary_hue="blue",
+    primary_hue="orange",
     secondary_hue="slate",
     neutral_hue="slate",
     font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"]
