@@ -4,6 +4,35 @@ An end-to-end machine learning project predicting customer churn on the Telco da
 
 A `requirements.txt` file has been added with pinned project dependencies.
 
+## Pipeline Architecture
+
+The overall architecture of this machine learning pipeline is designed to keep every stage modular, reusable, and easy to maintain. By converting the exploratory notebook into scalable scripts, we lay the foundation for building a robust backend.
+
+```mermaid
+graph TD
+    Raw[Raw Dataset] --> DataLoader[data_loader.py<br/>Ingestion & Preprocessing]
+    DataLoader -->|Cleaned Data| Features[features.py<br/>Feature Engineering]
+    Features -->|Processed Dataset| Models[models.py<br/>Training & Evaluation]
+    
+    Orchestrator[run_pipeline.py<br/>Orchestrator] -.->|Automates| DataLoader
+    Orchestrator -.->|Automates| Features
+    Orchestrator -.->|Automates| Models
+    
+    Models -->|Artifacts & Metrics| MLflow[mlflow_tracking.py<br/>Experiment Tracking]
+    Orchestrator -.->|Automates| MLflow
+    
+    Tests[tests/<br/>Validation & Sanity Checks] -.->|Validates| DataLoader
+    Tests -.->|Validates| Features
+    Tests -.->|Validates| Models
+```
+
+- **`data_loader.py`**: Ingests the raw dataset, performs quality checks (identifying missing values, duplicates, or invalid records), and applies basic preprocessing.
+- **`features.py`**: Transforms the cleaned data into numerical features (e.g., one-hot and binary encoding) for machine learning models.
+- **`models.py`**: Handles model training, hyperparameter tuning, and evaluation (e.g., accuracy, precision, recall) to identify the best-performing model.
+- **`tests/`**: Contains unit tests and sanity checks to validate that every module behaves as expected and catches issues early.
+- **`run_pipeline.py`**: Acts as the orchestrator to automate the complete workflow instead of manually running each script.
+- **`mlflow_tracking.py`**: Integrates with MLflow to track experiments, log metrics, store artifacts, and save the trained model for reproducibility.
+
 ## Dataset
 
 This project uses the **Telco Customer Churn** dataset from [Kaggle](https://www.kaggle.com/datasets/blastchar/telco-customer-churn?resource=download).
