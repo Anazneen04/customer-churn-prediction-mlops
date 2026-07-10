@@ -9,21 +9,15 @@ A `requirements.txt` file has been added with pinned project dependencies.
 The overall architecture of this machine learning pipeline is designed to keep every stage modular, reusable, and easy to maintain. By converting the exploratory notebook into scalable scripts, we lay the foundation for building a robust backend.
 
 ```mermaid
-graph TD
-    Raw[Raw Dataset] --> DataLoader[data_loader.py<br/>Ingestion & Preprocessing]
-    DataLoader -->|Cleaned Data| Features[features.py<br/>Feature Engineering]
-    Features -->|Processed Dataset| Models[models.py<br/>Training & Evaluation]
+graph LR
+    Data[(Raw Data)] --> Loader[data_loader.py]
+    Loader --> Features[features.py]
+    Features --> Models[models.py]
+    Models --> MLflow[(MLflow)]
     
-    Orchestrator[run_pipeline.py<br/>Orchestrator] -.->|Automates| DataLoader
-    Orchestrator -.->|Automates| Features
-    Orchestrator -.->|Automates| Models
-    
-    Models -->|Artifacts & Metrics| MLflow[mlflow_tracking.py<br/>Experiment Tracking]
-    Orchestrator -.->|Automates| MLflow
-    
-    Tests[tests/<br/>Validation & Sanity Checks] -.->|Validates| DataLoader
-    Tests -.->|Validates| Features
-    Tests -.->|Validates| Models
+    Pipeline[run_pipeline.py] -.-> Loader
+    Pipeline -.-> Features
+    Pipeline -.-> Models
 ```
 
 - **`data_loader.py`**: Ingests the raw dataset, performs quality checks (identifying missing values, duplicates, or invalid records), and applies basic preprocessing.
