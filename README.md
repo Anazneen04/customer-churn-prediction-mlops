@@ -4,28 +4,30 @@ An end-to-end machine learning project predicting customer churn on the Telco da
 
 A `requirements.txt` file has been added with pinned project dependencies.
 
-## Pipeline Architecture
+## Pipeline Architecture Development Notebook to Scripts for Scale and Production
 
 The overall architecture of this machine learning pipeline is designed to keep every stage modular, reusable, and easy to maintain. By converting the exploratory notebook into scalable scripts, we lay the foundation for building a robust backend.
 
 ```mermaid
 graph LR
-    Data[(Raw Data)] --> Loader[data_loader.py]
-    Loader --> Features[features.py]
-    Features --> Models[models.py]
-    Models --> MLflow[(MLflow)]
+    Data[(Raw Data)] --> DataDir[src/data/]
+    DataDir --> FeaturesDir[src/features/]
+    FeaturesDir --> ModelsDir[src/models/]
+    ModelsDir --> MLflow[(MLflow)]
     
-    Pipeline[run_pipeline.py] -.-> Loader
-    Pipeline -.-> Features
-    Pipeline -.-> Models
+    App[src/app/] -.-> Serving[src/serving/]
+    Serving -.-> ModelsDir
 ```
 
-- **`data_loader.py`**: Ingests the raw dataset, performs quality checks (identifying missing values, duplicates, or invalid records), and applies basic preprocessing.
-- **`features.py`**: Transforms the cleaned data into numerical features (e.g., one-hot and binary encoding) for machine learning models.
-- **`models.py`**: Handles model training, hyperparameter tuning, and evaluation (e.g., accuracy, precision, recall) to identify the best-performing model.
+- **`src/`**: Contains the core source code modules for the machine learning pipeline and application, organized into structured packages:
+  - **`data/`**: Ingests the raw dataset (`load_data.py`), performs quality checks, and applies basic preprocessing (`preprocess.py`).
+  - **`features/`**: Transforms the cleaned data into numerical features (e.g., one-hot and binary encoding) for machine learning models (`build_features.py`).
+  - **`models/`**: Handles model training (`train.py`), hyperparameter tuning (`tune.py`), evaluation (`evaluate.py`), and MLflow experiment tracking.
+  - **`serving/`**: Handles core ML inference logic (`inference.py`), loading the best serialized model.
+  - **`app/`**: Acts as the production-ready serving layer using FastAPI and Gradio (`main.py`, `app.py`) for API and UI access.
+  - **`utils/`**: Contains utilities and data validation scripts (`utils.py`, `validate_data.py`).
+- **`scripts/`**: Contains executable scripts for running the ML pipeline, preparing data, and standalone testing.
 - **`tests/`**: Contains unit tests and sanity checks to validate that every module behaves as expected and catches issues early.
-- **`run_pipeline.py`**: Acts as the orchestrator to automate the complete workflow instead of manually running each script.
-- **`mlflow_tracking.py`**: Integrates with MLflow to track experiments, log metrics, store artifacts, and save the trained model for reproducibility.
 
 ## Dataset
 
