@@ -18,7 +18,7 @@ from src.serving.inference import predict  # Core ML inference logic
 
 # Initialize FastAPI application
 app = FastAPI(
-    title="Telco Customer Churn Prediction API",
+    title="Customer Churn Prediction API",
     description="ML API for predicting customer churn in telecom industry",
     version="1.0.0"
 )
@@ -95,25 +95,18 @@ def get_prediction(data: CustomerData):
 
 # =================================================== # 
 
+# === GRADIO UI CONFIGURATION ===
 
-# === GRADIO WEB INTERFACE ===
-def gradio_interface(
+def process_prediction(
     gender, Partner, Dependents, PhoneService, MultipleLines,
     InternetService, OnlineSecurity, OnlineBackup, DeviceProtection,
     TechSupport, StreamingTV, StreamingMovies, Contract,
     PaperlessBilling, PaymentMethod, tenure, MonthlyCharges, TotalCharges
 ):
     """
-    Gradio interface function that processes form inputs and returns prediction.
-    
-    This function:
-    1. Takes individual form inputs from Gradio UI
-    2. Constructs the data dictionary matching the API schema
-    3. Calls the same inference pipeline used by the API
-    4. Returns user-friendly prediction string
-    
+    Adapter function mapping Gradio inputs to the inference pipeline.
+    Returns styled HTML blocks for professional dashboard rendering.
     """
-    # Construct data dictionary matching CustomerData schema
     data = {
         "gender": gender,
         "Partner": Partner,
@@ -130,74 +123,187 @@ def gradio_interface(
         "Contract": Contract,
         "PaperlessBilling": PaperlessBilling,
         "PaymentMethod": PaymentMethod,
-        "tenure": int(tenure),              # Ensure integer type
-        "MonthlyCharges": float(MonthlyCharges),  # Ensure float type
-        "TotalCharges": float(TotalCharges),      # Ensure float type
+        "tenure": int(tenure),
+        "MonthlyCharges": float(MonthlyCharges),
+        "TotalCharges": float(TotalCharges),
     }
     
-    # Call same inference pipeline as API endpoint
-    result = predict(data)
-    return str(result)  # Return as string for Gradio display
+    try:
+        result = predict(data)
+        
+        # Professional HTML Output formatting
+        if result == "Likely to churn":
+            return f"""
+            <div style="background-color: #fee2e2; border-left: 6px solid #ef4444; padding: 20px; border-radius: 8px; font-family: sans-serif;">
+                <h3 style="color: #991b1b; margin-top: 0; display: flex; align-items: center; font-size: 1.5rem;">
+                    <span style="font-size: 1.8rem; margin-right: 10px;">⚠️</span> High Risk
+                </h3>
+                <p style="color: #7f1d1d; font-size: 1.1rem; margin-bottom: 0;">
+                    <strong>Alert:</strong> This customer is highly likely to churn. Immediate retention intervention is recommended.
+                </p>
+            </div>
+            """
+        else:
+            return f"""
+            <div style="background-color: #dcfce7; border-left: 6px solid #22c55e; padding: 20px; border-radius: 8px; font-family: sans-serif;">
+                <h3 style="color: #166534; margin-top: 0; display: flex; align-items: center; font-size: 1.5rem;">
+                    <span style="font-size: 1.8rem; margin-right: 10px;">✅</span> Low Risk
+                </h3>
+                <p style="color: #14532d; font-size: 1.1rem; margin-bottom: 0;">
+                    <strong>Safe:</strong> This customer is expected to stay. No immediate action required.
+                </p>
+            </div>
+            """
+    except Exception as e:
+        return f"""
+        <div style="background-color: #f3f4f6; border-left: 6px solid #6b7280; padding: 20px; border-radius: 8px; font-family: sans-serif;">
+            <h3 style="color: #374151; margin-top: 0;">Error Processing Request</h3>
+            <p style="color: #4b5563;">{str(e)}</p>
+        </div>
+        """
 
-# === GRADIO UI CONFIGURATION ===
-# Build comprehensive Gradio interface with all customer features
-demo = gr.Interface(
-    fn=gradio_interface,
-    inputs=[
-        # Demographics section
-        gr.Dropdown(["Male", "Female"], label="Gender", value="Male"),
-        gr.Dropdown(["Yes", "No"], label="Partner", value="No"),
-        gr.Dropdown(["Yes", "No"], label="Dependents", value="No"),
-        
-        # Phone services section
-        gr.Dropdown(["Yes", "No"], label="Phone Service", value="Yes"),
-        gr.Dropdown(["Yes", "No", "No phone service"], label="Multiple Lines", value="No"),
-        
-        # Internet services section (key churn predictors)
-        gr.Dropdown(["DSL", "Fiber optic", "No"], label="Internet Service", value="Fiber optic"),
-        gr.Dropdown(["Yes", "No", "No internet service"], label="Online Security", value="No"),
-        gr.Dropdown(["Yes", "No", "No internet service"], label="Online Backup", value="No"),
-        gr.Dropdown(["Yes", "No", "No internet service"], label="Device Protection", value="No"),
-        gr.Dropdown(["Yes", "No", "No internet service"], label="Tech Support", value="No"),
-        gr.Dropdown(["Yes", "No", "No internet service"], label="Streaming TV", value="Yes"),
-        gr.Dropdown(["Yes", "No", "No internet service"], label="Streaming Movies", value="Yes"),
-        
-        # Contract and billing section (major churn factors)
-        gr.Dropdown(["Month-to-month", "One year", "Two year"], label="Contract", value="Month-to-month"),
-        gr.Dropdown(["Yes", "No"], label="Paperless Billing", value="Yes"),
-        gr.Dropdown([
-            "Electronic check", "Mailed check",
-            "Bank transfer (automatic)", "Credit card (automatic)"
-        ], label="Payment Method", value="Electronic check"),
-        
-        # Numeric features (important for churn prediction)
-        gr.Number(label="Tenure (months)", value=1, minimum=0, maximum=100),
-        gr.Number(label="Monthly Charges ($)", value=85.0, minimum=0, maximum=200),
-        gr.Number(label="Total Charges ($)", value=85.0, minimum=0, maximum=10000),
-    ],
-    outputs=gr.Textbox(label="Churn Prediction", lines=2),
-    title="🔮 Telco Customer Churn Predictor",
-    description="""
-    **Predict customer churn probability using machine learning**
-    
-    Fill in the customer details below to get a churn prediction. The model uses XGBoost trained on 
-    historical telecom customer data to identify customers at risk of churning.
-    
-    💡 **Tip**: Month-to-month contracts with fiber optic internet and electronic check payments 
-    tend to have higher churn rates.
-    """,
-    examples=[
-        # High churn risk example
-        ["Female", "No", "No", "Yes", "No", "Fiber optic", "No", "No", "No", 
-         "No", "Yes", "Yes", "Month-to-month", "Yes", "Electronic check", 
-         1, 85.0, 85.0],
-        # Low churn risk example  
-        ["Male", "Yes", "Yes", "Yes", "Yes", "DSL", "Yes", "Yes", "Yes",
-         "Yes", "No", "No", "Two year", "No", "Credit card (automatic)",
-         60, 45.0, 2700.0]
-    ],
-    theme=gr.themes.Soft()  # Professional appearance
+# Define the custom theme for professional look
+custom_theme = gr.themes.Soft(
+    primary_hue="blue",
+    secondary_hue="slate",
+    neutral_hue="slate",
+    font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"]
+).set(
+    button_primary_background_fill="*primary_600",
+    button_primary_background_fill_hover="*primary_700",
+    button_primary_text_color="white",
+    block_title_text_weight="600",
+    block_border_width="1px",
+    block_shadow="*shadow_sm"
 )
+
+with gr.Blocks(theme=custom_theme, title="Customer Churn Prediction", css="footer {visibility: hidden}") as demo:
+    
+    # Application Header
+    with gr.Row():
+        with gr.Column(scale=1):
+            gr.Markdown(
+                """
+                # Customer Churn Prediction
+                ### Identify at-risk customers to improve retention workflows
+                Enter customer details below or select an example to evaluate their churn risk probability. 
+                Our model utilizes historical data and XGBoost to deliver real-time risk assessments.
+                """
+            )
+            
+    with gr.Row():
+        
+        # Left Column - Inputs (70% width theoretically handled by scale=7/3)
+        with gr.Column(scale=7):
+            
+            with gr.Tabs():
+                # TAB 1: Demographics
+                with gr.TabItem("👤 Demographics"):
+                    with gr.Row():
+                        gender = gr.Radio(["Male", "Female"], label="Gender", value="Male")
+                        partner = gr.Radio(["Yes", "No"], label="Partner", value="No")
+                        dependents = gr.Radio(["Yes", "No"], label="Dependents", value="No")
+                
+                # TAB 2: Services
+                with gr.TabItem("⚙️ Services"):
+                    with gr.Row():
+                        phone_service = gr.Radio(["Yes", "No"], label="Phone Service", value="Yes")
+                        multiple_lines = gr.Radio(["Yes", "No", "No phone service"], label="Multiple Lines", value="No")
+                    
+                    gr.Markdown("#### Internet Add-ons")
+                    with gr.Group():
+                        internet_service = gr.Dropdown(["DSL", "Fiber optic", "No"], label="Internet Service", value="Fiber optic")
+                        with gr.Row():
+                            online_security = gr.Dropdown(["Yes", "No", "No internet service"], label="Online Security", value="No")
+                            online_backup = gr.Dropdown(["Yes", "No", "No internet service"], label="Online Backup", value="No")
+                            device_protection = gr.Dropdown(["Yes", "No", "No internet service"], label="Device Protection", value="No")
+                        with gr.Row():
+                            tech_support = gr.Dropdown(["Yes", "No", "No internet service"], label="Tech Support", value="No")
+                            streaming_tv = gr.Dropdown(["Yes", "No", "No internet service"], label="Streaming TV", value="Yes")
+                            streaming_movies = gr.Dropdown(["Yes", "No", "No internet service"], label="Streaming Movies", value="Yes")
+                            
+                # TAB 3: Account & Billing
+                with gr.TabItem("💳 Account & Billing"):
+                    with gr.Row():
+                        contract = gr.Dropdown(["Month-to-month", "One year", "Two year"], label="Contract", value="Month-to-month")
+                        paperless_billing = gr.Radio(["Yes", "No"], label="Paperless Billing", value="Yes")
+                        payment_method = gr.Dropdown([
+                            "Electronic check", "Mailed check",
+                            "Bank transfer (automatic)", "Credit card (automatic)"
+                        ], label="Payment Method", value="Electronic check")
+                    
+                    with gr.Row():
+                        tenure = gr.Slider(minimum=0, maximum=100, value=1, step=1, label="Tenure (months)", info="Number of months customer has stayed with the company")
+                        monthly_charges = gr.Number(label="Monthly Charges ($)", value=85.0)
+                        total_charges = gr.Number(label="Total Charges ($)", value=85.0, info="Lifetime value of customer")
+        
+        # Right Column - Output & Actions
+        with gr.Column(scale=3):
+            # Prediction Output Card
+            prediction_output = gr.HTML(
+                value='''
+                <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; text-align: center; color: #64748b; font-family: sans-serif;">
+                    Enter customer details and click <strong>Predict Churn Risk</strong> to see the result.
+                </div>
+                ''',
+                label="Risk Assessment"
+            )
+            
+            with gr.Row():
+                predict_btn = gr.Button("Predict Churn Risk", variant="primary", size="lg")
+            with gr.Row():
+                clear_btn = gr.Button("Clear Form", variant="secondary")
+
+            gr.Markdown("### 📌 Quick Examples")
+            gr.Examples(
+                examples=[
+                    # High risk
+                    ["Female", "No", "No", "Yes", "No", "Fiber optic", "No", "No", "No", "No", "Yes", "Yes", "Month-to-month", "Yes", "Electronic check", 1, 85.0, 85.0],
+                    # Low risk
+                    ["Male", "Yes", "Yes", "Yes", "Yes", "DSL", "Yes", "Yes", "Yes", "Yes", "No", "No", "Two year", "No", "Credit card (automatic)", 60, 45.0, 2700.0]
+                ],
+                inputs=[
+                    gender, partner, dependents, phone_service, multiple_lines,
+                    internet_service, online_security, online_backup, device_protection,
+                    tech_support, streaming_tv, streaming_movies, contract,
+                    paperless_billing, payment_method, tenure, monthly_charges, total_charges
+                ],
+                label=""
+            )
+
+    # Wire up the button click
+    input_components = [
+        gender, partner, dependents, phone_service, multiple_lines,
+        internet_service, online_security, online_backup, device_protection,
+        tech_support, streaming_tv, streaming_movies, contract,
+        paperless_billing, payment_method, tenure, monthly_charges, total_charges
+    ]
+    
+    predict_btn.click(
+        fn=process_prediction,
+        inputs=input_components,
+        outputs=prediction_output
+    )
+    
+    # Wire up the clear button
+    def clear_form():
+        return (
+            "Male", "No", "No", "Yes", "No", "Fiber optic", 
+            "No", "No", "No", "No", "Yes", "Yes", 
+            "Month-to-month", "Yes", "Electronic check", 
+            1, 85.0, 85.0,
+            '''
+            <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 20px; border-radius: 8px; text-align: center; color: #64748b; font-family: sans-serif;">
+                Enter customer details and click <strong>Predict Churn Risk</strong> to see the result.
+            </div>
+            '''
+        )
+        
+    clear_btn.click(
+        fn=clear_form,
+        inputs=[],
+        outputs=input_components + [prediction_output]
+    )
 
 # === MOUNT GRADIO UI INTO FASTAPI ===
 # This creates the /ui endpoint that serves the Gradio interface

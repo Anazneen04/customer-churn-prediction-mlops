@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import gradio as gr
 import os
@@ -10,6 +11,16 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from serving.inference import predict  # our single source of truth for inference
 
 app = FastAPI()
+
+# Add a Custom Favicon
+# Place your logo image file (e.g., logo.png or favicon.ico) in the src/app/ directory.
+FAVICON_PATH = os.path.join(os.path.dirname(__file__), "logo.png")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    if os.path.exists(FAVICON_PATH):
+        return FileResponse(FAVICON_PATH)
+    return {"status": "Not found"}
 
 @app.get("/")
 def root():
@@ -101,8 +112,13 @@ demo = gr.Interface(
         gr.Number(label="Total Charges"),
     ],
     outputs="text",
-    title="Telco Churn Predictor",
+    title="Customer Churn Prediction",
     description="Fill in the customer details to get a churn prediction.",
 )
 
-app = gr.mount_gradio_app(app, demo, path="/ui")
+app = gr.mount_gradio_app(
+    app, 
+    demo, 
+    path="/ui",
+    css=".gradio-container h1 { text-align: center; }"
+)

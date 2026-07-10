@@ -117,6 +117,14 @@ The `Telco Churn - XGBoost` experiment and the tuned run as seen in the MLflow U
 
 **Updated source:** A newer version is available from [IBM Community](https://community.ibm.com/community/user/businessanalytics/blogs/steven-macko/2019/07/11/telco-customer-churn-1113).
 
+## User Interface
+
+This is How the UI looks:
+
+![Low Risk UI](docs/images/LOW-RISK_UI-WITH-DUMMY-INPUT.png)
+
+![High Risk UI](docs/images/HIGH-RISK_UI-WITH-DUMMY-INPUT.png)
+
 ## Local setup
 
 1. Ensure conda (Miniconda or Anaconda) is installed.
