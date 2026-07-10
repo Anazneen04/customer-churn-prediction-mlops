@@ -119,6 +119,8 @@ The `Telco Churn - XGBoost` experiment and the tuned run as seen in the MLflow U
 
 ## User Interface
 
+The hosted UI is available here: [https://churn-ui-355591061580.us-east4.run.app/ui/](https://churn-ui-355591061580.us-east4.run.app/ui/)
+
 This is How the UI looks:
 
 ![Low Risk UI](docs/images/LOW-RISK_UI-WITH-DUMMY-INPUT.png)
@@ -143,3 +145,62 @@ pip install -r requirements.txt
 ```
 
 > **Note:** Be careful when running or changing code that affects production. Use this local environment for development and testing only.
+
+## Deployment to GCP
+
+We are now pushing the app to GCP for hosting the FastAPI and UI using Cloud Build, Artifact Registry, and Cloud Run (configured in `cloudbuild.yaml`).
+
+To set up the Google Cloud SDK locally and deploy, run the following commands:
+
+```bash
+brew install --cask google-cloud-sdk
+gcloud auth login
+gcloud config set project project-f5f576b6-51f1-4bf5-892
+
+# Enable required services
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com
+
+# Create Artifact Registry repository
+gcloud artifacts repositories create churn-repo --repository-format=docker --location=us-east4
+
+# Grant necessary permissions to the Cloud Build service account
+PROJECT_NUMBER=$(gcloud projects describe project-f5f576b6-51f1-4bf5-892 --format='value(projectNumber)')
+
+gcloud projects add-iam-policy-binding project-f5f576b6-51f1-4bf5-892 \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/run.admin"
+
+gcloud projects add-iam-policy-binding project-f5f576b6-51f1-4bf5-892 \
+  --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
+  --role="roles/iam.serviceAccountUser"
+
+# Grant necessary permissions to the Compute Engine default service account
+PROJECT=project-f5f576b6-51f1-4bf5-892
+SA=355591061580-compute@developer.gserviceaccount.com
+
+# read the uploaded source + write build artifacts
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA" --role="roles/storage.admin"
+
+# write build logs (required because cloudbuild uses CLOUD_LOGGING_ONLY)
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA" --role="roles/logging.logWriter"
+
+# push the image to Artifact Registry
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA" --role="roles/artifactregistry.writer"
+
+# deploy to Cloud Run + act as the runtime service account
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA" --role="roles/run.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT \
+  --member="serviceAccount:$SA" --role="roles/iam.serviceAccountUser"
+
+# Deploy using Cloud Build and cloudbuild.yaml
+gcloud builds submit --config cloudbuild.yaml \
+  --substitutions=_REGION=us-east4,_REPO=churn-repo,_SERVICE=churn-ui .
+```
+
+> **Warning:** Be careful with code in production!
+

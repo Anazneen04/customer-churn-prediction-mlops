@@ -30,8 +30,9 @@ COPY src/serving/model/3b1a41221fc44548aed629fa42b762e0/artifacts/preprocessing.
 ENV PYTHONUNBUFFERED=1 \ 
     PYTHONPATH=/app/src
 
-# 6. Expose FastAPI port
-EXPOSE 8000
+# 6. Expose port (Cloud Run injects $PORT, default 8080)
+EXPOSE 8080
 
-# 7. Run the FastAPI app using uvicorn (change path if needed)
-CMD ["python", "-m", "uvicorn", "src.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 7. Run the FastAPI app using uvicorn.
+# Shell-form CMD so $PORT (set by Cloud Run) is expanded; defaults to 8080 locally.
+CMD exec uvicorn src.app.main:app --host 0.0.0.0 --port ${PORT:-8080}

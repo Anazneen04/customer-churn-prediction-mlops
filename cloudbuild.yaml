@@ -1,0 +1,59 @@
+# Cloud Build pipeline: build -> push to Artifact Registry -> deploy to Cloud Run.
+#
+# Deploy with:
+#   gcloud builds submit --config cloudbuild.yaml \
+#     --substitutions=_REGION=us-central1,_REPO=churn-repo,_SERVICE=churn-ui .
+#
+# One-time setup (see README / plan): enable APIs and create the Artifact
+# Registry repo before the first build.
+
+substitutions:
+  _REGION: us-central1
+  _REPO: churn-repo
+  _SERVICE: churn-ui
+
+steps:
+  # 1. Build the image (-f dockerfile because the file name is lowercase)
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - build
+      - -f
+      - dockerfile
+      - -t
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID'
+      - .
+
+  # 2. Push the image to Artifact Registry
+  - name: gcr.io/cloud-builders/docker
+    args:
+      - push
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID'
+
+  # 3. Deploy to Cloud Run (public, listens on $PORT=8080)
+  - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+    entrypoint: gcloud
+    args:
+      - run
+      - deploy
+      - '${_SERVICE}'
+      - --image
+      - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID'
+      - --region
+      - '${_REGION}'
+      - --platform
+      - managed
+      - --allow-unauthenticated
+      - --port
+      - '8080'
+      - --memory
+      - 2Gi
+      - --cpu
+      - '2'
+      - --timeout
+      - '300'
+
+images:
+  - '${_REGION}-docker.pkg.dev/$PROJECT_ID/${_REPO}/${_SERVICE}:$BUILD_ID'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

@@ -1,0 +1,36 @@
+# Keep the image lean. NOTE: do NOT ignore src/serving/model — the dockerfile
+# COPYs those model artifacts into the image.
+
+# Version control
+.git
+.gitignore
+
+# MLflow experiment tracking store (model artifacts live under src/serving/model)
+mlruns/
+
+# Notebooks & exploratory data
+notebooks/
+*.ipynb
+data/
+
+# Tests
+tests/
+.pytest_cache/
+
+# Python caches / bytecode
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Local env / editor files
+.env
+.DS_Store
+.vscode/
+.idea/
